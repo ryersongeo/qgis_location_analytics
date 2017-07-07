@@ -1,0 +1,76 @@
+REQUIREMENTS
+-------------
+
+1. QGIS 2.x
+2. Python 2.7.x
+3. Shapefile data using a projected coordinate system
+
+
+SETUP
+------
+
+Please follow the steps below to prepare your computer to use custom Python scripts for Huff model analysis.
+
+>>> Step 1: Download and Extract the Python scripts
+
+The required scripts are available in a GitHub repository at https://github.com/ryersongeo/qgis_location_analytics . Selecting the green “Clone or download” button will allow for the download of all included files in the .zip format. Your web browser will likely save the files to your download folder. Extract the provided files from the .zip file. A new folder with the same name will appear and the downloaded files are included within. Reviewing the contents of the new folder, there are three Python files and these will be used with QGIS to complete Huff model analyses. To make these script files available to QGIS, you will need to copy them to a specific folder on your computer (described below). There is also a conference poster that provides an overview of the use of the scripts. This user guide is also included.
+
+>>> Step 2: Locating User Script Files for QGIS
+
+QGIS requires that user script files be located in a specific location on the user's hard drive. On a Windows 10 computer you will find this location at C:\Users\yourusername\.qgis2\processing\scripts . On a computer running Fedora 25 (Linux) the location is /home/yourusername/.qgis2/processing/scripts/ . You will need to locate the /.qgis2/processing/scripts/ folder if you are using a different computer/operating system. Once located, copy the three downloaded Python files into this folder. Some systems may hide this folder from the user and you may not be able to browse to it. An alternative method is to open each Python script file with a Python editor such as Idle, Spyder or in QGIS itself. You should be able to save to the required location with this approach.
+
+>>> Step 3: Using Python Scripts in QGIS
+
+Step 2 has placed the Python scripts in a special QGIS folder. Scripts in this folder will automatically be recognized and made available in the QGIS “Processing” panel (Processing>Toolbox menu if it's not showing). Navigate to Scripts>User Scripts in the Processing Panel. To use a “User script” either double-click or right-click on the script and select “Execute”. If QGIS was running when the Python scripts were copied into the /.qgis2/processing/scripts/ , you may need to restart QGIS for the scripts to be recognized.
+
+
+USING THE SCRIPTS
+------------------
+
+A user will typically have some point data such as shopping centres and some polygon data such as census tracts. Each of these data will be in its own shapefile. The user will wish to use the provided scripts to generate the Huff probabilities that those people located in a given region will visit a given point location. The scripts will do this, but additional data is required and the development of that data is presented below.
+
+>>> Step 4: Creating Centroids for Polygon Data
+
+Distances need to be calculated between each point such as a shopping centre and each polygon such as a census tract. To do this, the centroid of each polygon will be used. To create a new file of centroid data from the polygon data file, use the Vector>Geometry Tools>Polygon Centroids menu (this is a standard QGIS tool). Create and add a new layer for your regional polygon centroids.
+
+>>> Step 5: Creating Output Files to Capture Resulting Data
+
+The provided scripts work a bit like a person going to a well to get water - you need to take a bucket to capture the water. In a similar way, the three Python scripts append results to an existing shapefile that is specified as a parameter for the scripts when they are executed. For the distance matrix scripts, a file with minimal attribute data should be prepared from the polygon shapefile with only the geometry and ID field (the unique polygon identifier). The distance matrix scripts will append columns to the attribute table. Each new column will be for a point location. A cell at the intersection of a polygon region (row) and a point location (column) will contain the distance between the point location and the centroid of the polygon region in the units of the original projected data files. Huff model output files work in a similar way except that they capture probabilities instead of distances.
+
+You should prepare an output file for each distance matrix you wish to have available (euclidean and/or network) and each Huff probability experiment you wish to run. If you use a different set of points, then you will need new distance matrices. An experiment may use a different distance matrix, measure of attractiveness, exponent value, and point layer configuration (what if point "X" was/wasn't there?). Well-named Huff output files will help keep track of what parameters you selected for the experiments that have been run.
+
+To create the output file, right-click on the original polygon layer in the Layers Panel and select “Save As”. Save the file with an informative name. Most fields in the attribute table can be removed using the “Select fields to export” section. Click the arrow if it is not showing. It is easiest to “Deselect All” and then check the ID field as this is the only field to be kept. Not all versions of QGIS have the "Select fields to export" feature. If your version does not have this feature, you may also use the Editor to delete fields (described below); save a copy of your file with all fields and they will be deleted next. Check the “Add saved file to map” box and click “OK” to save the file. The new layer is added to the Layers Panel. If you need to delete fields, right-click on the new layer in the Layers Panel and select "Properties". Select the Fields tab on the left. Click the pencil icon to start editing. Select all the fields but your ID field. Click the "Delete Fields" icon. Click the pencil icon to exit Edit mode. Save the results. Exit Layer Properties. Opening the attribute table presents a clean file ready for new data.
+
+>>> Step 6: Creating Distance Matrices
+
+The Huff calculation requires the use of distances as part of the formula. Distances can be generated between each polygon centroid and each point location by using the provided Python scripts written for this purpose. Double-click the RyersonGeo_-_Distance_Matrix_-_Euclidean script in the Processing Panel to execute it. Select the inputs as follows:
+
+ - Consumer Centroid Layer		-> 	Specify the regional polygon centroid shapefile created in Step 4
+ - Consumer Centroid Layer ID Field	->	Specify the ID field of the regional polygon centroid shapefile created in Step 4
+ - Centre Point Layer			->	Specify the point layer for your study
+ - Centre Point Layer ID Field		->	Specify the ID field of the point layer for your study
+ - Output Layer				->	Specify the shapefile created in Step 5 to hold the Euclidean Distance Matrix data (Replace the file on prompt)
+
+Click "Run". The script should complete in a minute or two. The output for this script may be viewed in the attribute table. Distance units will depend on the projected coordinate system in use.
+
+Some users may have a point layer without an ID field. If this is the case, you will need to add and populate a field for this purpose. A string/text field type is best and values of 6 characters or less should be used. This is a key/ID field and values should be unique. Shapefiles have limitations on the length of field names. The Huff script will copy and add two characters to the point layer ID values to generate field names in an output file, this is why the ID values should be kept to a limited number of characters.
+
+If something goes wrong and the Python script fails to complete, there may be a need to reset the output file. Output files should generally only be used once as the script will attempt to append the same field names to the same attribute table. This will lead to variants of the field names being used and it will create issues downstream with other scripts. If there are issues, one of two options can be used. The first option is to delete the output file; just delete the five or six files (.dbf, .prj, .qpj, .shp, .shx) and recreate them using Step 5. The second option is to remove any new fields and data that has been created in those fields. The QGIS Editor may be used for this purpose. Right-click on the layer with issues in the Layers Panel and select “Properties”. This was described above in Step 5. You will need to correct any issues that prevented the Python script from running properly and then rerun the script.
+
+A script is also provided to calculate network distances. If you have a network layer such as a road network, you may wish to use this. There is an extra field on the RyersonGeo_-_Distance_Matrix_-_Network script to specify a shapefile with line data. This script takes some time to complete. To calculate the distances between 60 point locations and each census tract centroid in the Toronto Census Metropolitan Area using network distances took approximately 3 days!
+
+Step 7: Calculating Huff Probabilities
+
+Calculating Huff probabilities is achieved by using the Huff model Python script. All required inputs have been provided for in the above steps. Double-click the RyersonGeo_-_Huff model script in the Processing Panel to execute it. Select the inputs as follows:
+
+ - Consumer Layer with Distance Matrix	-> 	Specify the euclidean or network distance matrix shapefile created in Step 6
+ - Consumer Layer ID Field		->	Specify the ID field of the regional polygon centroid shapefile created in Step 6
+ - Centre Point Layer			->	Specify the point layer for your study and that was used to create the distance matrix 
+ - Centre Point Layer ID Field		->	Specify the ID field of the point layer for your study
+ - Centre Layer Attractiveness Field	->	Specify the field that identifies the measure of attractiveness (size (sqft), # of stores, sales volume ($), ...) you wish to use
+ - Huff Exponent Value			->	Specify the exponent value to use in the Huff equation. Options are 0.5, 1.0, 1.5, 2.0, 2.5, or 3.0
+ - Output Layer				->	Specify the shapefile created in Step 5 to hold the Huff probabilities data (Replace the file on prompt)
+
+Click "Run". The script should complete in a minute or two. The output for this script may be viewed in the attribute table. Values are decimals and each row of probability values should sum to 1.
+
+You should now be able to complete a map that presents the regional probabilities related to one point location. Additional locations can be considered, but not presented at the same time. This is a limitation the two-dimensional map.
